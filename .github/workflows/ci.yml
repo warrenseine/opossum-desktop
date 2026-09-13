@@ -12,7 +12,7 @@ jobs:
     # declares platforms: [.macOS(.v26)], so it still needs an SDK that knows about that tag.
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Show Xcode / Swift version
         run: xcodebuild -version && swift --version
       - name: Run OpossumKit unit tests
@@ -22,7 +22,7 @@ jobs:
   app-build:
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Generate Xcode project
