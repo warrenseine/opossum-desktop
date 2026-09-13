@@ -28,9 +28,15 @@ targets:
         MACOSX_DEPLOYMENT_TARGET: "26.0"
         ENABLE_APP_SANDBOX: false
         ENABLE_HARDENED_RUNTIME: false
+        # Ad-hoc sign the whole bundle (no Developer ID needed). CODE_SIGNING_ALLOWED must stay
+        # true for this: with it false, Xcode skips its CodeSign build phase entirely and only
+        # the linker's minimal auto-signature applies to the raw executable — which does NOT
+        # seal Resources or bind Info.plist. That half-signed state is what left the Dock (an
+        # execution-time context) refusing the custom icon while Finder (passive file browsing)
+        # still rendered it fine.
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGNING_REQUIRED: false
-        CODE_SIGNING_ALLOWED: false
+        CODE_SIGNING_ALLOWED: true
         GENERATE_INFOPLIST_FILE: true
         INFOPLIST_KEY_LSUIElement: false
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
