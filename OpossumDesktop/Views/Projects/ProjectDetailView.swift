@@ -11,8 +11,15 @@ struct ProjectDetailView: View {
     @State private var isLoadingConfig = false
     @State private var isDestroyConfirmationPresented = false
     @State private var removeVolumesOnDown = false
+    @State private var serviceStatuses: [ProjectServiceStatus] = []
 
-    private var containers: [ContainerInfo] { environment.containers(forProject: project.name) }
+    // Which containers belong to this project, per `opossum ps` -- not derived by filtering
+    // `container ls`'s `opossum.project` label ourselves, now that opossum can just say so
+    // directly (opossum 0.29+, https://github.com/suruseas/opossum/pull/1).
+    private var containers: [ContainerInfo] {
+        let ids = Set(serviceStatuses.map(\.container))
+        return environment.runtimeStore.snapshot.containers.filter { ids.contains($0.id) }
+    }
 
     var body: some View {
         Form {
@@ -21,9 +28,7 @@ struct ProjectDetailView: View {
                     Text("No containers for this project yet.").foregroundStyle(.secondary)
                 } else {
                     ForEach(containers.sorted { $0.serviceName < $1.serviceName }) { container in
-                        NavigationLink(value: container) {
-                            ContainerRow(container: container)
-                        }
+                        ContainerRow(container: container)
                     }
                 }
             }
@@ -75,6 +80,10 @@ struct ProjectDetailView: View {
             ContainerDetailView(container: container)
         }
         .task { await loadConfig() }
+        .task { await loadServices() }
+        .onChange(of: environment.runtimeStore.snapshot) { _, _ in
+            Task { await loadServices() }
+        }
         .sheet(isPresented: $isActionSheetPresented) {
             StreamingActionSheet(title: project.name, runner: runner) { isActionSheetPresented = false }
         }
@@ -104,6 +113,11 @@ struct ProjectDetailView: View {
             isActionSheetPresented = true
             runner.run(label: "destroy", stream: environment.opossumCLI.destroy(context))
         }
+    }
+
+    private func loadServices() async {
+        guard let context = await environment.projectContext(for: project.name) else { return }
+        serviceStatuses = (try? await environment.opossumCLI.ps(for: context)) ?? []
     }
 
     private func loadConfig() async {

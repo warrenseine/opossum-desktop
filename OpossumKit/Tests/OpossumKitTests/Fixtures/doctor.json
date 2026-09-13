@@ -1,4 +1,7 @@
-[
-  { "name": "runtime", "level": "ok", "message": "Apple container system is running", "fix": null },
-  { "name": "builder", "level": "warn", "message": "the build VM has only 2048 MB", "fix": "container builder delete --force && container builder start --cpus 4 --memory 8g" }
-]
+{
+  "healthy": false,
+  "checks": [
+    { "id": "runtime", "status": "ok", "detail": "Apple container system is running", "fix": "" },
+    { "id": "builder", "status": "warn", "detail": "the build VM has only 2048 MB", "fix": "container builder delete --force && container builder start --cpus 4 --memory 8g" }
+  ]
+}

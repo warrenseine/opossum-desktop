@@ -54,12 +54,12 @@ struct RuntimeView: View {
                     ForEach(report.checks) { check in
                         VStack(alignment: .leading, spacing: 2) {
                             HStack {
-                                StatusDot(kind: check.level == .ok ? .running : (check.level == .warn ? .warning : .stopped))
+                                StatusDot(kind: check.isOK ? .running : (check.isWarning ? .warning : .stopped))
                                 Text(check.name).font(.body.weight(.medium))
                             }
-                            Text(check.message).font(.caption).foregroundStyle(.secondary)
-                            if let fix = check.fix {
-                                Text(fix).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
+                            Text(check.detail).font(.caption).foregroundStyle(.secondary)
+                            if !check.fix.isEmpty {
+                                Text(check.fix).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
                             }
                         }
                         .padding(.vertical, 2)

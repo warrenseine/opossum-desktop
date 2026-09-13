@@ -81,6 +81,21 @@ public struct OpossumCLI: Sendable {
         return try Self.decoder.decode([OpossumVolumeSummary].self, from: Data(result.stdout.utf8))
     }
 
+    /// A project's services joined with their container's live status. Requires opossum 0.29+
+    /// (`ps --format json`); older installs will fail this call with a nonzero exit / stderr.
+    public func ps(for project: ProjectContext) async throws -> [ProjectServiceStatus] {
+        let bin = try binary()
+        let result = try await runner.run(
+            executable: bin,
+            arguments: ["ps", "--format", "json"] + project.globalFlags,
+            currentDirectory: project.directory
+        )
+        guard result.succeeded else {
+            throw CLIError.nonZeroExit(command: "opossum ps", exitCode: result.exitCode, stderr: result.stderr)
+        }
+        return try Self.decoder.decode([ProjectServiceStatus].self, from: Data(result.stdout.utf8))
+    }
+
     public func config(for project: ProjectContext) async throws -> ProcessResult {
         let bin = try binary()
         return try await runner.run(

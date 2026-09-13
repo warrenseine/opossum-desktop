@@ -1,0 +1,10 @@
+[
+  {
+    "Service": "web",
+    "Container": "web.demo.opossum",
+    "Image": "nginx:alpine",
+    "IP": "192.168.66.2",
+    "Ports": "0.0.0.0:8088->80/tcp",
+    "Status": "running"
+  }
+]
