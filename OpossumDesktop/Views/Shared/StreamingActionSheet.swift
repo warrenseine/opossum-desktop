@@ -7,6 +7,9 @@ struct StreamingActionSheet: View {
     let title: String
     @Bindable var runner: ProjectActionRunner
     let onDismiss: () -> Void
+    // See ContainerDetailView.ContainerLogsTab.isActive: skips a `scrollTo` that would otherwise
+    // collide with this sheet's own dismissal teardown.
+    @State private var isActive = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -33,11 +36,12 @@ struct StreamingActionSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .onChange(of: runner.output.count) { _, count in
-                    guard count > 0 else { return }
+                    guard isActive, count > 0 else { return }
                     proxy.scrollTo(count - 1, anchor: .bottom)
                 }
             }
             .background(Color(nsColor: .textBackgroundColor))
+            .onDisappear { isActive = false }
 
             if !runner.diagnostics.isEmpty {
                 Divider()

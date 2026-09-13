@@ -26,17 +26,29 @@ struct ContainersView: View {
                         : "Start the container runtime from the Runtime tab."
                 )
             } else {
-                List {
-                    ForEach(grouped, id: \.project) { group in
-                        Section(group.project) {
-                            ForEach(group.containers) { container in
-                                NavigationLink(value: container) {
+                // Not `List` -- on this toolchain, a List grouped into dynamic Sections here
+                // renders as nothing but a lone warning-triangle glyph and no title (same category
+                // of failure as the sidebar's List click bug and ContentUnavailableView's broken
+                // render: see RootView, EmptyStateView). A plain ScrollView has no List/Section
+                // machinery to fail; `ProjectsView`'s flat, ungrouped `List` is unaffected, so this
+                // is left as the narrower fix rather than replacing List everywhere.
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 16) {
+                        ContainerRowColumnHeader()
+                        ForEach(grouped, id: \.project) { group in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(group.project)
+                                    .font(.headline)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, 4)
+                                ForEach(group.containers) { container in
                                     ContainerRow(container: container)
+                                    Divider()
                                 }
-                                .contextMenu { ContainerContextMenu(container: container) }
                             }
                         }
                     }
+                    .padding()
                 }
                 .navigationDestination(for: ContainerInfo.self) { container in
                     ContainerDetailView(container: container)
@@ -47,21 +59,18 @@ struct ContainersView: View {
     }
 }
 
-struct ContainerContextMenu: View {
-    let container: ContainerInfo
-    @Environment(AppEnvironment.self) private var environment
-
+/// Column titles for `ContainerRow`'s layout below -- widths must stay in sync with it.
+private struct ContainerRowColumnHeader: View {
     var body: some View {
-        if container.isRunning {
-            Button("Stop") { Task { try? await environment.containerCLI.stop(ids: [container.id]) } }
-            Button("Restart") { Task { try? await environment.containerCLI.restart(ids: [container.id]) } }
-            Button("Kill") { Task { try? await environment.containerCLI.kill(ids: [container.id]) } }
-        } else {
-            Button("Start") { Task { try? await environment.containerCLI.start(ids: [container.id]) } }
+        HStack(spacing: 12) {
+            Text("Name").frame(maxWidth: .infinity, alignment: .leading)
+            Text("Image").frame(width: 180, alignment: .leading)
+            Text("Port").frame(width: 70, alignment: .leading)
+            Text("Status").frame(width: 70, alignment: .leading)
+            Text("Actions").frame(width: 108, alignment: .trailing)
         }
-        Divider()
-        Button("Remove", role: .destructive) {
-            Task { try? await environment.containerCLI.remove(ids: [container.id], force: true) }
-        }
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 8)
     }
 }

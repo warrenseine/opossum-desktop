@@ -52,17 +52,27 @@ struct RootView: View {
                 .padding(8)
             }
             .navigationSplitViewColumnWidth(min: 160, ideal: 190)
+            // Suppresses macOS's automatic keyboard-focus ring, which the system assigns by
+            // default to the first focusable control in a new window -- here, whichever sidebar
+            // row rendered first. Each row already draws its own selection highlight (the
+            // isSelected background), so the system's separate ring on top of that just reads as
+            // a second, permanently "focused"-looking row that never goes away.
+            .focusEffectDisabled()
         } detail: {
             NavigationStack {
                 detailView
             }
         }
         // .searchable and the custom toolbar item both attach here, at the NavigationSplitView
-        // itself, rather than splitting .searchable onto the inner NavigationStack. That split
-        // (searchable nested one level down from a sibling .toolbar) is a known SwiftUI/AppKit
-        // toolbar-merge bug on macOS: AppKit logs "It's not legal to call -layoutSubtreeIfNeeded
-        // on a view which is already being laid out" once at launch, and the split view's own
-        // hit-testing can end up permanently wedged afterward -- sidebar clicks stop navigating.
+        // itself, rather than splitting .searchable onto the inner NavigationStack -- keep them
+        // together regardless: AppKit logs "It's not legal to call -layoutSubtreeIfNeeded on a
+        // view which is already being laid out" once, very early at launch, every run. Verified by
+        // testing (not assumption) that this specific arrangement is NOT the cause: the warning
+        // still fires identically with .searchable removed, and again with the .toolbar removed
+        // too. It appears intrinsic to this beta's NavigationSplitView/MenuBarExtra window
+        // materialization, logged once by design (see _NSDetectedLayoutRecursion) with no
+        // reproducible symptom tied to it after the sidebar/List/ContentUnavailableView fixes
+        // elsewhere in this file's history -- not something fixable from application code.
         .searchable(text: $searchText, placement: .toolbar)
         .toolbar {
             ToolbarItem(placement: .status) {

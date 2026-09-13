@@ -79,6 +79,13 @@ struct ContainerDetailView: View {
 
 private struct ContainerLogsTab: View {
     @Bindable var logStreamer: LogStreamer
+    // A chatty container can append many lines a second, each triggering `scrollTo` below. If one
+    // of those fires while this tab is mid-teardown from switching sidebar sections, it collides
+    // with the NavigationSplitView content swap's own layout pass -- the known "-layoutSubtreeIfNeeded
+    // on a view which is already being laid out" recursion -- and corrupts that frame, which can
+    // show up as the warning-triangle glyph on WHATEVER renders next, on any tab, until the next
+    // clean layout pass. Skipping `scrollTo` once this view starts disappearing avoids the collision.
+    @State private var isActive = true
 
     var body: some View {
         VStack(spacing: 0) {
@@ -110,11 +117,12 @@ private struct ContainerLogsTab: View {
                     .padding(8)
                 }
                 .onChange(of: logStreamer.lines.count) { _, count in
-                    guard count > 0 else { return }
+                    guard isActive, count > 0 else { return }
                     proxy.scrollTo(count - 1, anchor: .bottom)
                 }
             }
         }
+        .onDisappear { isActive = false }
     }
 }
 
