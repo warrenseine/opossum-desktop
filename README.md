@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.png" width="128" height="128" alt="Opossum Desktop logo">
+</p>
+
 # Opossum Desktop
 
 A lightweight, native macOS GUI for [opossum](https://github.com/suruseas/opossum) — the
