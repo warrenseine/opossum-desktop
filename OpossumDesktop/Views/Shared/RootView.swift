@@ -40,9 +40,15 @@ struct RootView: View {
         } detail: {
             NavigationStack {
                 detailView
-                    .searchable(text: $searchText, placement: .toolbar)
             }
         }
+        // .searchable and the custom toolbar item both attach here, at the NavigationSplitView
+        // itself, rather than splitting .searchable onto the inner NavigationStack. That split
+        // (searchable nested one level down from a sibling .toolbar) is a known SwiftUI/AppKit
+        // toolbar-merge bug on macOS: AppKit logs "It's not legal to call -layoutSubtreeIfNeeded
+        // on a view which is already being laid out" once at launch, and the split view's own
+        // hit-testing can end up permanently wedged afterward -- sidebar clicks stop navigating.
+        .searchable(text: $searchText, placement: .toolbar)
         .toolbar {
             ToolbarItem(placement: .status) {
                 RuntimeStatusBadge()
