@@ -33,8 +33,23 @@ struct RootView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(SidebarSection.allCases, selection: $selection) { section in
-                Label(section.rawValue, systemImage: section.systemImage)
+            // Not List(selection:) -- on this toolchain, clicking a row never updated the
+            // selection binding in testing (most likely explanation: List's underlying
+            // NSTableView intercepting the click before anything else sees it, a known category
+            // of issue on macOS). A plain ScrollView + VStack of rows, with each row setting
+            // `selection` itself via .onTapGesture, has no NSTableView underneath to do that, and
+            // is confirmed working (verified with real simulated mouse clicks via `cliclick`,
+            // which -- unlike osascript/System Events' `click at` -- actually registers with
+            // SwiftUI's gesture system on this toolchain).
+            ScrollView {
+                VStack(spacing: 2) {
+                    ForEach(SidebarSection.allCases) { section in
+                        SidebarRow(section: section, isSelected: section == selection)
+                            .contentShape(Rectangle())
+                            .onTapGesture { selection = section }
+                    }
+                }
+                .padding(8)
             }
             .navigationSplitViewColumnWidth(min: 160, ideal: 190)
         } detail: {
@@ -68,6 +83,22 @@ struct RootView: View {
         case .runtime: RuntimeView()
         case .settings: SettingsView()
         }
+    }
+}
+
+/// A sidebar row that owns its own selection highlight, since `List(_:selection:)`'s built-in
+/// click handling doesn't work on this toolchain (see RootView).
+private struct SidebarRow: View {
+    let section: SidebarSection
+    let isSelected: Bool
+
+    var body: some View {
+        Label(section.rawValue, systemImage: section.systemImage)
+            .padding(.vertical, 4)
+            .padding(.horizontal, 6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isSelected ? Color.accentColor.opacity(0.18) : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }
 
