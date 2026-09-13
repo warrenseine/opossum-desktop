@@ -34,12 +34,36 @@ struct ProjectDetailView: View {
             }
 
             Section("Actions") {
-                HStack(spacing: 8) {
-                    Button("Up") { runAction(label: "up") { environment.opossumCLI.up($0) } }
-                    Button("Up --build") { runAction(label: "up --build") { environment.opossumCLI.up($0, build: true) } }
-                    Button("Down") { runAction(label: "down") { environment.opossumCLI.down($0, removeVolumes: removeVolumesOnDown) } }
-                    Button("Restart") { runAction(label: "restart") { environment.opossumCLI.restart($0) } }
+                HStack(spacing: 10) {
+                    Button {
+                        runAction(label: "up") { environment.opossumCLI.up($0) }
+                    } label: {
+                        Label("Up", systemImage: "play.fill")
+                    }
+                    .help("opossum up")
+
+                    Button {
+                        runAction(label: "up --build") { environment.opossumCLI.up($0, build: true) }
+                    } label: {
+                        Label("Up --build", systemImage: "hammer.fill")
+                    }
+                    .help("opossum up --build")
+
+                    Button {
+                        runAction(label: "down") { environment.opossumCLI.down($0, removeVolumes: removeVolumesOnDown) }
+                    } label: {
+                        Label("Down", systemImage: "stop.fill")
+                    }
+                    .help("opossum down")
+
+                    Button {
+                        runAction(label: "restart") { environment.opossumCLI.restart($0) }
+                    } label: {
+                        Label("Restart", systemImage: "arrow.clockwise")
+                    }
+                    .help("opossum restart")
                 }
+                .buttonStyle(.bordered)
                 Toggle("Remove named volumes on Down (-v)", isOn: $removeVolumesOnDown)
             }
 
