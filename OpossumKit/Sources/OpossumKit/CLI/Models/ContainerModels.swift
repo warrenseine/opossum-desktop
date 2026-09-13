@@ -37,12 +37,12 @@ public struct ContainerInfo: Sendable, Codable, Equatable, Hashable, Identifiabl
             public var id: String { "\(hostPort ?? 0)-\(containerPort)-\(proto)" }
             public let hostPort: Int?
             public let containerPort: Int
+            // The real key is "proto", not "protocol" -- this was wrong from the start (the test
+            // fixture was hand-authored to match the wrong assumption, so nothing caught it) and
+            // threw on decode for every container that publishes a port, poisoning the whole
+            // `[ContainerInfo]` array decode via Poller's `try?` and silently pinning the runtime
+            // snapshot at empty/"Stopped" forever.
             public let proto: String
-
-            enum CodingKeys: String, CodingKey {
-                case hostPort, containerPort
-                case proto = "protocol"
-            }
         }
         public struct InitProcess: Sendable, Codable, Equatable, Hashable {
             public let arguments: [String]?

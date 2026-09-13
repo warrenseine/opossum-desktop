@@ -16,6 +16,7 @@ struct ContainerModelsDecodingTests {
         #expect(web.configuration.resources.cpus == 2)
         #expect(web.configuration.image.reference == "docker.io/library/nginx:latest")
         #expect(web.configuration.publishedPorts?.first?.hostPort == 8080)
+        #expect(web.configuration.publishedPorts?.first?.proto == "tcp")
         #expect(web.primaryIPv4 == "192.168.65.12")
         #expect(web.configuration.mounts?.count == 2)
         #expect(web.configuration.mounts?.first?.type.kind == "bind")
@@ -57,18 +58,34 @@ struct ContainerModelsDecodingTests {
         #expect(networks[0].status?.ipv4Subnet == "192.168.65.0/24")
     }
 
-    @Test("decodes opossum doctor --format json (bare array)")
+    @Test("decodes opossum doctor --format json")
     func decodesDoctorReport() throws {
         let report = try iso8601Decoder.decode(DoctorReport.self, from: TestFixtures.data("doctor.json"))
+        #expect(report.healthy == false)
         #expect(report.checks.count == 2)
-        #expect(report.checks[0].level == .ok)
-        #expect(report.checks[1].level == .warn)
-        #expect(report.checks[1].fix?.contains("builder start") == true)
+        #expect(report.checks[0].isOK == true)
+        #expect(report.checks[1].isWarning == true)
+        #expect(report.checks[1].fix.contains("builder start") == true)
     }
 
     @Test("decodes opossum ls -a --format json")
     func decodesProjectList() throws {
         let projects = try iso8601Decoder.decode([OpossumProjectSummary].self, from: TestFixtures.data("opossum-ls.json"))
         #expect(projects == [OpossumProjectSummary(name: "demo", status: "running(2)")])
+    }
+
+    @Test("decodes opossum ps --format json")
+    func decodesProjectServiceStatuses() throws {
+        let services = try iso8601Decoder.decode([ProjectServiceStatus].self, from: TestFixtures.data("opossum-ps.json"))
+        #expect(services == [
+            ProjectServiceStatus(
+                service: "web",
+                container: "web.demo.opossum",
+                image: "nginx:alpine",
+                ip: "192.168.66.2",
+                ports: "0.0.0.0:8088->80/tcp",
+                status: "running"
+            )
+        ])
     }
 }

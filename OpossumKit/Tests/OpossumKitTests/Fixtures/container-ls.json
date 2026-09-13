@@ -24,7 +24,7 @@
         }
       ],
       "publishedPorts": [
-        { "hostPort": 8080, "containerPort": 80, "protocol": "tcp" }
+        { "hostPort": 8080, "containerPort": 80, "proto": "tcp", "hostAddress": "0.0.0.0", "count": 1 }
       ],
       "initProcess": {
         "arguments": [],
