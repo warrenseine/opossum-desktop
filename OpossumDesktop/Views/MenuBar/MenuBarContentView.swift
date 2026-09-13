@@ -90,9 +90,9 @@ private struct MenuBarProjectRow: View {
     private func toggle() async {
         guard let context = await environment.projectContext(for: project.name) else { return }
         if isRunning {
-            runner.run(label: "down", stream: environment.opossumCLI.down(context))
+            runner.run(label: "down", stream: environment.opossumCLI.down(context), notifyProject: project.name)
         } else {
-            runner.run(label: "up", stream: environment.opossumCLI.up(context))
+            runner.run(label: "up", stream: environment.opossumCLI.up(context), notifyProject: project.name)
         }
     }
 }

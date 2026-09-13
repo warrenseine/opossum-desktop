@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import OpossumKit
 
 struct RuntimeView: View {
@@ -7,6 +8,10 @@ struct RuntimeView: View {
     @State private var isBusy = false
     @State private var actionError: String?
     @State private var systemLogText = ""
+    @State private var diagnosticsDocument: DiagnosticsZipDocument?
+    @State private var isExportingDiagnostics = false
+    @State private var isBuildingDiagnostics = false
+    @State private var diagnosticsError: String?
 
     private var running: Bool { environment.runtimeStore.snapshot.runtimeRunning }
 
@@ -79,11 +84,47 @@ struct RuntimeView: View {
                     Button("Reload") { Task { await loadSystemLogs() } }
                 }
             }
+
+            Section("Diagnostics bundle") {
+                Text("Doctor output, system status/disk usage, and the last 30 minutes of system logs. No container environment variables are included.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let diagnosticsError {
+                    Text(diagnosticsError).font(.caption).foregroundStyle(.red)
+                }
+                Button(isBuildingDiagnostics ? "Building…" : "Export Diagnostics Bundle…") {
+                    Task { await buildDiagnostics() }
+                }
+                .disabled(isBuildingDiagnostics)
+            }
         }
         .formStyle(.grouped)
         .navigationTitle("Runtime")
         .task {
             await refreshDiskUsage()
+        }
+        .fileExporter(
+            isPresented: $isExportingDiagnostics,
+            document: diagnosticsDocument,
+            contentType: .zip,
+            defaultFilename: "opossum-desktop-diagnostics"
+        ) { result in
+            if case .failure(let error) = result {
+                diagnosticsError = String(describing: error)
+            }
+        }
+    }
+
+    private func buildDiagnostics() async {
+        isBuildingDiagnostics = true
+        diagnosticsError = nil
+        defer { isBuildingDiagnostics = false }
+        do {
+            let data = try await DiagnosticsBundle.build(environment: environment)
+            diagnosticsDocument = DiagnosticsZipDocument(data: data)
+            isExportingDiagnostics = true
+        } catch {
+            diagnosticsError = String(describing: error)
         }
     }
 

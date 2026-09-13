@@ -14,3 +14,5 @@ Package.resolved
 
 # Local scratch
 *.dSYM
+build/
+dist/

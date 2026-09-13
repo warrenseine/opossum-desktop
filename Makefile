@@ -1,4 +1,6 @@
-.PHONY: gen build test run clean
+VERSION ?= 0.1.0
+
+.PHONY: gen build test run clean release
 
 # Regenerate OpossumDesktop.xcodeproj from project.yml (requires `brew install xcodegen`).
 gen:
@@ -17,4 +19,18 @@ run: build
 	open "$$(find ~/Library/Developer/Xcode/DerivedData -maxdepth 1 -iname 'OpossumDesktop-*' -print -quit)/Build/Products/Debug/Opossum Desktop.app"
 
 clean:
-	rm -rf OpossumDesktop.xcodeproj OpossumKit/.build
+	rm -rf OpossumDesktop.xcodeproj OpossumKit/.build build dist
+
+# Build an unsigned Release .app, zip it (ditto, so it stays double-clickable and Gatekeeper-sane
+# to the extent an unsigned app can be), and write its sha256 for the Homebrew cask manifest.
+# Usage: make release VERSION=0.2.0
+release: gen
+	xcodebuild -project OpossumDesktop.xcodeproj -scheme OpossumDesktop -configuration Release \
+		-destination 'platform=macOS' -derivedDataPath build/DerivedData \
+		MARKETING_VERSION=$(VERSION) build
+	mkdir -p dist
+	ditto -c -k --sequesterRsrc --keepParent \
+		"build/DerivedData/Build/Products/Release/Opossum Desktop.app" \
+		"dist/OpossumDesktop-$(VERSION).zip"
+	shasum -a 256 "dist/OpossumDesktop-$(VERSION).zip" | tee "dist/OpossumDesktop-$(VERSION).zip.sha256"
+	@echo "Built dist/OpossumDesktop-$(VERSION).zip"

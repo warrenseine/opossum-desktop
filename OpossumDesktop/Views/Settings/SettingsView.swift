@@ -5,7 +5,6 @@ struct SettingsView: View {
     @Environment(AppEnvironment.self) private var environment
     @State private var isRelocateImporterPresented = false
     @State private var relocateTarget: RegisteredProject?
-    @State private var updateInfo: ReleaseInfo?
     @State private var isCheckingUpdate = false
 
     var body: some View {
@@ -27,7 +26,7 @@ struct SettingsView: View {
             }
 
             Section("Notifications") {
-                Toggle("Notify when a container exits non-zero", isOn: $environment.settings.notifyOnContainerExit)
+                Toggle("Notify when a running container stops", isOn: $environment.settings.notifyOnContainerExit)
                     .onChange(of: environment.settings.notifyOnContainerExit) { _, _ in environment.settings.save() }
                 Toggle("Notify when reclaimable disk usage is high", isOn: $environment.settings.notifyOnDiskReclaimable)
                     .onChange(of: environment.settings.notifyOnDiskReclaimable) { _, _ in environment.settings.save() }
@@ -59,15 +58,21 @@ struct SettingsView: View {
             }
 
             Section("Updates") {
-                if let updateInfo {
-                    Link("Version \(updateInfo.tagName) is available — open release notes", destination: updateInfo.htmlURL)
+                if let update = environment.availableUpdate {
+                    Link("Version \(update.tagName) is available — open release notes", destination: update.htmlURL)
                 } else {
                     Text("Opossum Desktop is unsigned; updates ship via Homebrew (`brew upgrade --cask opossum-desktop`).")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Button(isCheckingUpdate ? "Checking…" : "Check for updates") { Task { await checkForUpdates() } }
-                    .disabled(isCheckingUpdate)
+                Button(isCheckingUpdate ? "Checking…" : "Check for updates") {
+                    Task {
+                        isCheckingUpdate = true
+                        await environment.checkForUpdate()
+                        isCheckingUpdate = false
+                    }
+                }
+                .disabled(isCheckingUpdate)
             }
         }
         .formStyle(.grouped)
@@ -78,16 +83,6 @@ struct SettingsView: View {
                 await environment.unregisterProject(name: target.name)
                 await environment.registerProject(directory: url)
             }
-        }
-    }
-
-    private func checkForUpdates() async {
-        isCheckingUpdate = true
-        defer { isCheckingUpdate = false }
-        guard let latest = try? await ReleaseChecker.latestRelease() else { return }
-        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
-        if ReleaseChecker.isNewer(latest: latest.tagName, than: currentVersion) {
-            updateInfo = latest
         }
     }
 }

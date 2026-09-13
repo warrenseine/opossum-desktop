@@ -24,7 +24,11 @@ final class ProjectActionRunner {
         return false
     }
 
-    func run(label: String, stream: AsyncThrowingStream<ProcessEvent, Error>) {
+    /// - Parameters:
+    ///   - notifyProject: when set, a system notification is posted on completion — use this for
+    ///     actions kicked off somewhere the user isn't already watching live output (the menu
+    ///     bar's quick start/stop), not for actions shown in a `StreamingActionSheet`.
+    func run(label: String, stream: AsyncThrowingStream<ProcessEvent, Error>, notifyProject: String? = nil) {
         task?.cancel()
         output.removeAll()
         diagnostics.removeAll()
@@ -51,6 +55,10 @@ final class ProjectActionRunner {
             } catch {
                 self.output.append(String(describing: error))
                 self.state = .failed(label, exitCode: -1)
+            }
+            if let notifyProject {
+                let succeeded = if case .succeeded = self.state { true } else { false }
+                NotificationManager.shared.notifyActionFinished(project: notifyProject, label: label, succeeded: succeeded)
             }
         }
     }

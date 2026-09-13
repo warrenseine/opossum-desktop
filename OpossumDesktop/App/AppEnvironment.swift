@@ -19,6 +19,13 @@ final class AppEnvironment {
     var doctorReport: DoctorReport?
     var doctorError: String?
     var settings = AppSettings.load()
+    var availableUpdate: ReleaseInfo?
+
+    private var previousRunningIDs: Set<String> = []
+    private var previousRuntimeRunning: Bool?
+    private var notifiedReclaimableTypes: Set<String> = []
+    private var notificationWatcherTask: Task<Void, Never>?
+    private var diskWatcherTask: Task<Void, Never>?
 
     init() {
         let locator = BinaryLocator()
@@ -34,10 +41,78 @@ final class AppEnvironment {
         runtimeStore.start()
         Task { await self.refreshProjects() }
         Task { await self.refreshDoctor() }
+        NotificationManager.shared.requestAuthorization()
+        startNotificationWatcher()
+        startDiskWatcher()
+        Task { await checkForUpdate() }
     }
 
     func stop() {
         runtimeStore.stop()
+        notificationWatcherTask?.cancel()
+        diskWatcherTask?.cancel()
+    }
+
+    /// Polls the in-memory snapshot (already kept fresh by `RuntimeStore`'s own poller/triggers)
+    /// for the two state transitions worth notifying about: the runtime starting/stopping, and a
+    /// container that was running no longer being running.
+    private func startNotificationWatcher() {
+        notificationWatcherTask?.cancel()
+        notificationWatcherTask = Task { @MainActor in
+            while !Task.isCancelled {
+                checkForNotifiableChanges()
+                try? await Task.sleep(for: .seconds(3))
+            }
+        }
+    }
+
+    private func checkForNotifiableChanges() {
+        let snapshot = runtimeStore.snapshot
+
+        if let previous = previousRuntimeRunning, previous != snapshot.runtimeRunning {
+            NotificationManager.shared.notifyRuntimeStateChanged(running: snapshot.runtimeRunning)
+        }
+        previousRuntimeRunning = snapshot.runtimeRunning
+
+        let runningIDs = Set(snapshot.containers.filter(\.isRunning).map(\.id))
+        if settings.notifyOnContainerExit {
+            let stoppedNow = previousRunningIDs.subtracting(runningIDs)
+            for id in stoppedNow {
+                guard let container = snapshot.containers.first(where: { $0.id == id }) else { continue }
+                NotificationManager.shared.notifyContainerStopped(service: container.serviceName, project: container.projectLabel)
+            }
+        }
+        previousRunningIDs = runningIDs
+    }
+
+    /// Checks `container system df` on a slow timer and notifies once per type crossing the
+    /// reclaimable threshold, not on every tick — it resets once that type drops back below it.
+    private func startDiskWatcher() {
+        diskWatcherTask?.cancel()
+        diskWatcherTask = Task { @MainActor in
+            while !Task.isCancelled {
+                if settings.notifyOnDiskReclaimable, let rows = try? await containerCLI.diskUsage() {
+                    for row in rows {
+                        let overThreshold = row.reclaimablePercent >= 50 && row.reclaimableBytes > 5_000_000_000
+                        if overThreshold, !notifiedReclaimableTypes.contains(row.type) {
+                            NotificationManager.shared.notifyDiskReclaimable(row)
+                            notifiedReclaimableTypes.insert(row.type)
+                        } else if !overThreshold {
+                            notifiedReclaimableTypes.remove(row.type)
+                        }
+                    }
+                }
+                try? await Task.sleep(for: .seconds(1800))
+            }
+        }
+    }
+
+    func checkForUpdate() async {
+        guard let latest = try? await ReleaseChecker.latestRelease() else { return }
+        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
+        if ReleaseChecker.isNewer(latest: latest.tagName, than: currentVersion) {
+            availableUpdate = latest
+        }
     }
 
     func refreshProjects() async {
