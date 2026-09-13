@@ -22,7 +22,12 @@ jobs:
   app-build:
     runs-on: macos-26
     steps:
+      # App icon/menu bar icon PNGs are Git LFS objects; without lfs: true, checkout leaves their
+      # literal "version https://git-lfs.github.com/spec/v1" pointer text in place instead of the
+      # real image data, and actool fails to compile the asset catalog against that.
       - uses: actions/checkout@v5
+        with:
+          lfs: true
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Generate Xcode project
