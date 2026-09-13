@@ -30,20 +30,25 @@ struct RootView: View {
     @Environment(AppEnvironment.self) private var environment
     @State private var selection: SidebarSection? = .projects
     @State private var searchText = ""
+    @FocusState private var sidebarFocused: Bool
 
     var body: some View {
         NavigationSplitView {
             List(SidebarSection.allCases, selection: $selection) { section in
                 Label(section.rawValue, systemImage: section.systemImage)
-                    .tag(section)
             }
             .navigationSplitViewColumnWidth(min: 160, ideal: 190)
+            .focused($sidebarFocused)
         } detail: {
             NavigationStack {
                 detailView
                     .searchable(text: $searchText, placement: .toolbar)
             }
         }
+        // Without this, the sidebar's initial selection renders in the
+        // unemphasized gray style (no view has keyboard focus yet at launch)
+        // instead of the emphasized blue "this is selected" look.
+        .defaultFocus($sidebarFocused, true)
         .toolbar {
             ToolbarItem(placement: .status) {
                 RuntimeStatusBadge()
@@ -73,9 +78,11 @@ struct RuntimeStatusBadge: View {
         let running = environment.runtimeStore.snapshot.runtimeRunning
         HStack(spacing: 6) {
             StatusDot(kind: running ? .running : .stopped)
-            Text(running ? "Runtime running" : "Runtime stopped")
+            Text(running ? "Running" : "Stopped")
                 .foregroundStyle(.secondary)
         }
         .font(.caption)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
     }
 }
