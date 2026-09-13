@@ -23,11 +23,15 @@ clean:
 
 # Build an unsigned Release .app, zip it (ditto, so it stays double-clickable and Gatekeeper-sane
 # to the extent an unsigned app can be), and write its sha256 for the Homebrew cask manifest.
+# CURRENT_PROJECT_VERSION (CFBundleVersion) is stamped with the current time rather than left
+# static: macOS's icon/LaunchServices caches key off bundle identity + version, so reinstalling
+# over the same path with an unchanged version can leave a stale icon in the Dock/Quick Look
+# even though the files on disk are current.
 # Usage: make release VERSION=0.2.0
 release: gen
 	xcodebuild -project OpossumDesktop.xcodeproj -scheme OpossumDesktop -configuration Release \
 		-destination 'platform=macOS' -derivedDataPath build/DerivedData \
-		MARKETING_VERSION=$(VERSION) build
+		MARKETING_VERSION=$(VERSION) CURRENT_PROJECT_VERSION=$(shell date +%s) build
 	mkdir -p dist
 	ditto -c -k --sequesterRsrc --keepParent \
 		"build/DerivedData/Build/Products/Release/Opossum Desktop.app" \

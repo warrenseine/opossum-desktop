@@ -13,7 +13,9 @@ struct MenuBarLabel: View {
         Label {
             Text(running ? "\(runningCount)" : "off")
         } icon: {
-            Image(systemName: running ? "shippingbox.fill" : "shippingbox")
+            Image("MenuBarIcon")
+                .renderingMode(.template)
+                .opacity(running ? 1 : 0.4)
         }
     }
 }
