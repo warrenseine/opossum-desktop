@@ -1,0 +1,7 @@
+[
+  {
+    "id": "demo-network",
+    "configuration": { "name": "demo-network", "mode": "nat", "labels": {} },
+    "status": { "ipv4Subnet": "192.168.65.0/24", "ipv4Gateway": "192.168.65.1" }
+  }
+]

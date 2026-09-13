@@ -1,0 +1,10 @@
+[
+  {
+    "id": "sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc",
+    "configuration": {
+      "name": "docker.io/library/nginx:latest",
+      "descriptor": { "digest": "sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc", "size": 9226 },
+      "creationDate": "2026-04-16T23:53:24Z"
+    }
+  }
+]

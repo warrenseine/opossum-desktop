@@ -1,0 +1,68 @@
+[
+  {
+    "configuration": {
+      "id": "web.demo.opossum",
+      "hostname": "web",
+      "labels": {
+        "opossum.project": "demo",
+        "opossum.config-hash": "abc123"
+      },
+      "image": { "reference": "docker.io/library/nginx:latest" },
+      "resources": { "cpus": 2, "memoryInBytes": 536870912 },
+      "mounts": [
+        {
+          "destination": "/usr/share/nginx/html",
+          "source": "/Users/demo/site",
+          "options": ["cached"],
+          "type": { "virtiofs": {} }
+        },
+        {
+          "destination": "/data",
+          "source": "/Users/demo/Library/Application Support/com.apple.container/volumes/demo_data/volume.img",
+          "options": [],
+          "type": { "volume": { "name": "demo_data", "format": "ext4" } }
+        }
+      ],
+      "publishedPorts": [
+        { "hostPort": 8080, "containerPort": 80, "protocol": "tcp" }
+      ],
+      "initProcess": {
+        "arguments": [],
+        "environment": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "DB_PASSWORD=Sw9mK2pQeTz8Rb3nHc7XyVjLp5AaFqUo",
+          "PUBLIC_URL=https://example.com"
+        ]
+      },
+      "creationDate": "2026-09-13T10:47:02Z"
+    },
+    "status": {
+      "state": "running",
+      "startedDate": "2026-09-13T10:47:03Z",
+      "networks": [
+        { "hostname": "web.demo.opossum.", "ipv4Address": "192.168.65.12/24", "network": "demo-network" }
+      ]
+    }
+  },
+  {
+    "configuration": {
+      "id": "db.demo.opossum",
+      "hostname": "db",
+      "labels": {
+        "opossum.project": "demo",
+        "opossum.config-hash": "def456"
+      },
+      "image": { "reference": "docker.io/library/postgres:16" },
+      "resources": { "cpus": 4, "memoryInBytes": 1073741824 },
+      "mounts": [],
+      "publishedPorts": [],
+      "initProcess": { "arguments": [], "environment": [] },
+      "creationDate": "2026-09-13T10:46:53Z"
+    },
+    "status": {
+      "state": "stopped",
+      "startedDate": null,
+      "networks": []
+    }
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {
+    "id": "web.demo.opossum",
+    "cpuUsageUsec": 1838985086,
+    "memoryLimitBytes": 536870912,
+    "memoryUsageBytes": 152820224,
+    "networkRxBytes": 25680302,
+    "networkTxBytes": 26364305,
+    "blockReadBytes": 14584173568,
+    "blockWriteBytes": 1030356992,
+    "numProcesses": 5
+  }
+]
