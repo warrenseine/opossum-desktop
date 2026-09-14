@@ -16,7 +16,12 @@ struct OpossumDesktopApp: App {
                     environment.runtimeStore.setVisible(phase == .active)
                 }
         }
-        .windowResizability(.contentSize)
+        // Not .contentSize: it tracks the content's ideal size with no upper bound, and a
+        // ScrollView full of rows (e.g. Containers with many services) reports its full content
+        // height as "ideal", so the window kept growing to fit every row instead of scrolling --
+        // balloons to 1000pt+ tall just from switching to a busy project. .automatic (the
+        // default) makes it a normal user-resizable window instead.
+        .windowResizability(.automatic)
         .commands {
             CommandGroup(replacing: .newItem) {}
         }

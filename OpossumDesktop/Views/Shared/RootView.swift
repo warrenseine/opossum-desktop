@@ -30,6 +30,13 @@ struct RootView: View {
     @Environment(AppEnvironment.self) private var environment
     @State private var selection: SidebarSection? = .projects
     @State private var searchText = ""
+    // The detail NavigationStack's push history (e.g. Containers -> a container's detail) is
+    // separate state from `selection`/`detailView` -- swapping which root view `detailView`
+    // renders does NOT by itself pop a stack that's mid-navigation, so picking a different
+    // sidebar section while drilled into something left you stuck looking at the old pushed
+    // view (its title, its still-streaming log tab, all of it) while only the sidebar highlight
+    // moved. Give the stack an explicit path and reset it on every section change.
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
         NavigationSplitView {
@@ -46,7 +53,10 @@ struct RootView: View {
                     ForEach(SidebarSection.allCases) { section in
                         SidebarRow(section: section, isSelected: section == selection)
                             .contentShape(Rectangle())
-                            .onTapGesture { selection = section }
+                            .onTapGesture {
+                                selection = section
+                                navigationPath = NavigationPath()
+                            }
                     }
                 }
                 .padding(8)
@@ -59,7 +69,7 @@ struct RootView: View {
             // a second, permanently "focused"-looking row that never goes away.
             .focusEffectDisabled()
         } detail: {
-            NavigationStack {
+            NavigationStack(path: $navigationPath) {
                 detailView
             }
         }
