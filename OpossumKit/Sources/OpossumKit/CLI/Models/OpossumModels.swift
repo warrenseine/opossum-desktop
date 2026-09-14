@@ -86,4 +86,12 @@ public struct OPSMDiagnostic: Sendable, Equatable, Identifiable {
     public var id: String { "\(code)-\(message.hashValue)" }
     public let code: String
     public let message: String
+    public var severity: OPSMSeverity { OPSMCodes.severity(for: code) }
+}
+
+/// Whether an `[OPSM-NNN]` code reports a problem, or just something opossum is now doing (e.g.
+/// OPSM-408, "a supervisor is now running for this project") that needs no action.
+public enum OPSMSeverity: Sendable, Equatable {
+    case info
+    case warning
 }

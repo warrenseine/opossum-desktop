@@ -86,17 +86,23 @@ struct StreamingActionSheet: View {
 private struct DiagnosticRow: View {
     let diagnostic: OPSMDiagnostic
 
+    private var tint: Color { diagnostic.severity == .info ? .secondary : .orange }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(diagnostic.code).font(.caption.bold())
-            Text(diagnostic.message).font(.caption)
-            if let fix = OPSMCodes.fix(for: diagnostic.code) {
-                Text(fix).font(.caption).foregroundStyle(.secondary)
+        HStack(alignment: .top, spacing: 6) {
+            Image(systemName: diagnostic.severity == .info ? "info.circle" : "exclamationmark.triangle")
+                .foregroundStyle(tint)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(diagnostic.code).font(.caption.bold())
+                Text(diagnostic.message).font(.caption)
+                if let fix = OPSMCodes.fix(for: diagnostic.code) {
+                    Text(fix).font(.caption).foregroundStyle(.secondary)
+                }
             }
         }
         .padding(6)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.orange.opacity(0.12))
+        .background(tint.opacity(0.12))
         .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }

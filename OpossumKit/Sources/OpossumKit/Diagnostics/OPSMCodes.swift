@@ -25,4 +25,13 @@ public enum OPSMCodes {
     ]
 
     public static func fix(for code: String) -> String? { knownFixes[code] }
+
+    /// Codes that report something opossum is now doing, not a problem for the user to act on.
+    private static let infoCodes: Set<String> = [
+        "OPSM-408" // "a small supervisor is now running for this project" (restart: policy)
+    ]
+
+    public static func severity(for code: String) -> OPSMSeverity {
+        infoCodes.contains(code) ? .info : .warning
+    }
 }
