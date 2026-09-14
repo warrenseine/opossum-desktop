@@ -61,9 +61,19 @@ public final class LogStreamer {
     }
 
     private func append(_ line: LogLine) {
-        lines.append(line)
+        let stripped = LogLine(stream: line.stream, text: Self.stripANSIEscapes(line.text))
+        lines.append(stripped)
         if lines.count > maxLines {
             lines.removeFirst(lines.count - maxLines)
         }
+    }
+
+    // Chatty dev-server processes (vite, webpack, ...) color their own output for a terminal;
+    // rendered as plain Text these CSI codes show up as literal garbage ("[32m[1mVITE[22m").
+    private static let ansiEscapePattern = try! NSRegularExpression(pattern: "\u{1B}\\[[0-9;]*[a-zA-Z]")
+
+    private static func stripANSIEscapes(_ text: String) -> String {
+        let range = NSRange(text.startIndex..., in: text)
+        return ansiEscapePattern.stringByReplacingMatches(in: text, range: range, withTemplate: "")
     }
 }
